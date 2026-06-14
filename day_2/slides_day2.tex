@@ -1,0 +1,285 @@
+\documentclass[aspectratio=169]{beamer}
+\input{../theme/imsb_beamer.tex}
+
+\title{Imaging-based single-cell spatial data: Xenium}
+\author{Dr.\ Robin Khatri}
+\institute{Institute of Medical Systems Bioinformatics, UKE}
+\date{Day 2 \textendash{} 17.06.2026}
+
+\begin{document}
+
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Recap and today}
+  Yesterday: spot-based Visium, the standard workflow, and first spatial
+  statistics.
+  \vskip0.5em
+  Today we move to \textbf{imaging-based} data at single-cell resolution:
+  \begin{itemize}
+    \item how the data are produced and why segmentation is the key step;
+    \item quality control and evaluation metrics specific to this technology;
+    \item a full single-cell spatial workflow, and the method choices along the way.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{How imaging-based ST works}
+  \begin{columns}[T]
+  \begin{column}{0.5\textwidth}
+  \begin{itemize}
+    \item A targeted gene panel is detected \emph{in situ} by cyclic hybridisation
+      and imaging of fluorescent probes.
+    \item Each gene has a code; across rounds the code is read out and decoded to a
+      transcript at an $(x,y)$ location.
+    \item Transcripts are assigned to cells using a segmentation mask.
+    \item Output: transcripts, a cell $\times$ gene matrix, cell metadata, and images.
+  \end{itemize}
+  \end{column}
+  \begin{column}{0.48\textwidth}
+  \centering
+  \begin{tikzpicture}[scale=0.8]
+    \foreach \i/\x in {1/0,2/1.3,3/2.6,4/3.9}{
+      \node[draw=imsbblue,thick,minimum size=0.7cm] (r\i) at (\x,2.6) {};
+      \node[lab,below=0pt of r\i]{R\i};}
+    \fill[imsbblue!60] (0,2.6) circle (0.08);
+    \fill[imsbblue!60] (2.6,2.6) circle (0.08);
+    \fill[imsbblue!60] (3.9,2.6) circle (0.08);
+    \node[box,below=8mm of r2,xshift=0.6cm] (code) {codeword\\1011};
+    \node[box,below=5mm of code] (gene) {gene = CD3D};
+    \draw[arr] (r2.south) -- (code.north);
+    \draw[arr] (code) -- (gene);
+  \end{tikzpicture}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Imaging-based platforms}
+  \small
+  \begin{center}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Platform & Panel size & Note \\
+    \midrule
+    MERFISH / Vizgen & $\sim$300\textendash 1000 & error-robust barcodes \\
+    seqFISH+ & $\sim$10{,}000 & many pseudocolours \\
+    Xenium (10x) & 280\textendash 480, up to 5000 (Prime) & in situ, H\&E compatible \\
+    CosMx (NanoString) & $\sim$1000\textendash 6000 & RNA and protein \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vskip0.4em
+  We use Xenium with the 377-gene Multi-Tissue and Cancer panel. The panel choice
+  bounds what biology you can see, so it is part of the experimental design.
+\end{frame}
+
+\begin{frame}{Xenium outputs and how to read them}
+  \begin{itemize}
+    \item \texttt{cell\_feature\_matrix.h5}: cell $\times$ feature counts (genes and
+      controls).
+    \item \texttt{cells.parquet}: centroid, area, counts per cell.
+    \item \texttt{transcripts.parquet}: every decoded transcript (large).
+    \item \texttt{morphology\_*.ome.tif}: images (large).
+  \end{itemize}
+  \vskip0.3em
+  \textbf{Two reading paths.} \texttt{spatialdata\_io.xenium} builds a full object
+  with images and shapes (great for visualisation, heavy). For table-level analysis
+  we read the matrix and cell table straight into AnnData. Same cells, a fraction
+  of the memory: this is what keeps us inside 25 GB.
+\end{frame}
+
+\begin{frame}{Segmentation is the crux}
+  \begin{columns}[T]
+  \begin{column}{0.54\textwidth}
+  Cells are defined by a mask, and everything downstream inherits its errors.
+  \begin{itemize}
+    \item In dense tissue, boundaries are ambiguous: transcripts are misassigned,
+      and small or nucleus-less cells are missed.
+    \item Symptoms: implausible co-expression, ``cells'' with too few transcripts,
+      lineage markers bleeding across boundaries.
+  \end{itemize}
+  Treat cell-level results as estimates and sanity-check against the raw transcript
+  image where it matters.
+  \end{column}
+  \begin{column}{0.44\textwidth}
+  \centering
+  \begin{tikzpicture}[scale=0.9]
+    \draw[imsbdark,thick,dashed] (0,1.4) circle (1.05);
+    \fill[imsbblue!40] (0,1.4) circle (0.45);
+    \node[lab] at (0,1.4) {nucleus};
+    \node[lab] at (0,0.05) {+ expansion};
+    \foreach \x/\y in {0.9/1.9, 1.0/0.9, -0.95/1.7, -0.8/1.0, 0.2/2.3}{\fill[imsbgrey!70] (\x,\y) circle (0.07);}
+    \node[lab,right=0.1cm] at (1.2,2.2){stray\\transcripts};
+  \end{tikzpicture}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Segmentation methods}
+  \small
+  \begin{itemize}
+    \item \textbf{Default (10x):} nuclear stain plus $\sim$15\,\textmu m expansion; a
+      multimodal deep-learning kit uses membrane/boundary stains when available.
+    \item \textbf{Image-based:} Cellpose (generalist nucleus/membrane segmentation).
+    \item \textbf{Transcript-based:} Baysor and Proseg learn transcript
+      colocalisation; Proseg uses a cellular Potts model.
+    \item \textbf{Learned, reference-aware:} segger (graph neural network, transcript
+      to cell link prediction, can use scRNA-seq).
+  \end{itemize}
+  \vskip0.3em
+  Benchmarks show a tradeoff between transcript capture and cell purity that is
+  tissue-dependent; there is no universal winner.
+  \refline{Stringer et al., \emph{Nat Methods} 2021 (Cellpose); Petukhov et al. (Baysor); Jones et al.\ 2025 (Proseg); Heidari et al.\ 2025 (segger).}
+\end{frame}
+
+\begin{frame}{Why segmentation matters for your biology}
+  \begin{itemize}
+    \item Misassigned transcripts directly corrupt cell typing and, especially,
+      cell\textendash cell communication (a ligand can ``jump'' to the wrong cell).
+    \item Nucleus-anchored methods miss cells without a captured nucleus, biasing
+      composition.
+    \item Improving identity in poorly segmented, dense regions is an active and
+      unsolved problem.
+  \end{itemize}
+  \figslot{the same field of view segmented by two methods, with cell counts and a marker that should not co-occur}{a segmentation-benchmark figure (e.g.\ segger or CRISP), or your own}
+  \refline{Heidari et al.\ 2025 (segger); CRISP segmentation benchmark, bioRxiv 2026.}
+\end{frame}
+
+\begin{frame}{Control features}
+  \begin{columns}[T]
+  \begin{column}{0.56\textwidth}
+  The panel ships with built-in negative controls:
+  \begin{itemize}
+    \item \textbf{Negative control probes}: target no real transcript; estimate
+      non-specific binding.
+    \item \textbf{Negative control codewords (blanks)}: valid codes assigned to no
+      gene; estimate the decoding error rate.
+  \end{itemize}
+  A healthy run puts only a small fraction of counts on controls. A high control
+  fraction in a cell or region is a warning.
+  \end{column}
+  \begin{column}{0.42\textwidth}
+  \centering
+  \begin{tikzpicture}[scale=0.9]
+    \fill[imsbblue!55] (0,0) rectangle (0.6,3.2);
+    \fill[imsbgrey!55] (1.1,0) rectangle (1.7,0.5);
+    \node[lab,below] at (0.3,0){genes};
+    \node[lab,below] at (1.4,0){controls};
+    \node[lab,above] at (0.3,3.2){signal};
+    \node[lab,above] at (1.4,0.5){noise};
+  \end{tikzpicture}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Quality control and evaluation metrics}
+  \begin{itemize}
+    \item \textbf{Transcripts / cell} and \textbf{genes / cell}: too few means an
+      empty or fragmented segment.
+    \item \textbf{Control fraction / cell}: flags noise.
+    \item \textbf{Cell area}: very small or very large segments are suspect.
+    \item \textbf{Counts vs area}: density should be roughly consistent.
+    \item \textbf{Panel sensitivity}: counts are far below scRNA-seq, so a gene's
+      absence is weak evidence.
+  \end{itemize}
+  Read every metric in space, not only as a histogram.
+\end{frame}
+
+\begin{frame}{Cell typing on a small panel}
+  \begin{itemize}
+    \item Fewer genes make clusters noisier and rare types harder to separate.
+    \item Use a curated marker set for the tissue, then refine by eye and check
+      spatial plausibility.
+    \item Reference label transfer (CellTypist, scANVI, \texttt{ingest}) scales when
+      a matched scRNA-seq reference exists, but inherits any segmentation
+      contamination.
+    \item BANKSY can type cells and find domains together using the neighbourhood.
+  \end{itemize}
+  \refline{Dom\'inguez Conde et al., \emph{Science} 2022 (CellTypist); Singhal et al., \emph{Nat Genet} 2024 (BANKSY).}
+\end{frame}
+
+\begin{frame}{Choosing a spatial graph}
+  \centering
+  \begin{tikzpicture}[scale=0.8]
+    \begin{scope}
+      \foreach \x/\y in {0/0,0.8/0.6,0.3/1.2,1.2/1.4,1.6/0.4}{\fill[imsbblue!60] (\x,\y) circle (0.1);}
+      \draw[line] (0,0)--(0.8,0.6); \draw[line] (0.8,0.6)--(0.3,1.2); \draw[line] (0.8,0.6)--(1.2,1.4); \draw[line] (0.8,0.6)--(1.6,0.4);
+      \node[lab] at (0.7,-0.5){kNN};
+    \end{scope}
+    \begin{scope}[xshift=4cm]
+      \foreach \x/\y in {0/0,0.8/0.6,0.3/1.2,1.2/1.4,1.6/0.4}{\fill[imsbblue!60] (\x,\y) circle (0.1);}
+      \draw[line] (0,0)--(0.8,0.6)--(0.3,1.2)--(0,0); \draw[line] (0.8,0.6)--(1.2,1.4)--(0.3,1.2); \draw[line] (0.8,0.6)--(1.6,0.4)--(1.2,1.4);
+      \node[lab] at (0.7,-0.5){Delaunay};
+    \end{scope}
+    \begin{scope}[xshift=8cm]
+      \foreach \x/\y in {0/0,0.8/0.6,0.3/1.2,1.2/1.4,1.6/0.4}{\fill[imsbblue!60] (\x,\y) circle (0.1);}
+      \draw[imsbgrey,dashed] (0.8,0.6) circle (0.9);
+      \draw[line] (0.8,0.6)--(0,0); \draw[line] (0.8,0.6)--(0.3,1.2); \draw[line] (0.8,0.6)--(1.6,0.4);
+      \node[lab] at (0.7,-0.5){radius};
+    \end{scope}
+  \end{tikzpicture}
+  \vskip0.5em
+  kNN fixes the neighbour count; Delaunay follows tissue geometry; radius fixes a
+  physical distance. The choice changes enrichment results, so state it.
+\end{frame}
+
+\begin{frame}{Single-cell spatial statistics}
+  \begin{itemize}
+    \item \textbf{Neighbourhood enrichment}: which cell types co-locate vs avoid
+      each other (permutation test on the graph).
+    \item \textbf{Co-occurrence}: how that association changes with distance,
+      separating tight contact from regional association.
+    \item \textbf{Ripley's K / L}: clustering vs dispersion of a cell type across
+      scales.
+    \item \textbf{Spatially variable genes}: Moran's I over cells.
+  \end{itemize}
+  These are the building blocks for the organisation analysis on Day 3.
+\end{frame}
+
+\begin{frame}{Beyond one section}
+  \begin{itemize}
+    \item Multiple sections bring batch effects. Integration with Harmony or scVI
+      aligns embeddings before joint clustering.
+    \item Spatial-aware methods (e.g.\ BANKSY) can do batch-aware domain detection.
+    \item Comparing conditions needs composition-aware tests, not just eyeballing
+      proportions (Day 3).
+  \end{itemize}
+  \refline{Korsunsky et al., \emph{Nat Methods} 2019 (Harmony); Lopez et al., \emph{Nat Methods} 2018 (scVI).}
+\end{frame}
+
+\begin{frame}{Open problems on imaging-based data}
+  \begin{itemize}
+    \item Segmentation in dense tissue, and its propagation into typing and
+      communication.
+    \item Low detection of cytokines and chemokines, so immune states are hard to
+      identify.
+    \item Reliability of spatial QC metrics, which are still being standardised.
+    \item Integrating images (H\&E) with the molecular layer for better region
+      identity.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Further reading}
+  \footnotesize
+  \begin{itemize}
+    \item Petukhov et al. Baysor: cell segmentation from transcripts.
+    \item Jones et al.\ 2025 (Proseg); Heidari et al.\ 2025 (segger); Stringer et al., \emph{Nat Methods} 2021 (Cellpose).
+    \item Singhal et al. BANKSY. \emph{Nat Genet} 2024.
+    \item 10x Genomics analysis guides for Xenium segmentation and QC.
+    \item Squidpy tutorials for Xenium: \texttt{squidpy.readthedocs.io}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Hands-on: \texttt{day\_2/02\_tutorial.ipynb}}
+  Dataset: a public Xenium non-diseased human kidney section ($\sim$97{,}560 cells).
+  You will:
+  \begin{itemize}
+    \item read the section the lean way (matrix + cell table);
+    \item separate control features and compute Xenium QC;
+    \item filter, normalise, cluster, and annotate cell types with markers;
+    \item plot cell types in space; build a spatial graph and run enrichment,
+      co-occurrence, and Moran's I.
+  \end{itemize}
+  Exercises: set thresholds and map removed cells, refine annotation, compare kNN vs
+  Delaunay graphs, and interpret spatially variable genes.
+\end{frame}
+
+\end{document}

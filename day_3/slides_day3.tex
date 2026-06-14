@@ -1,0 +1,181 @@
+\documentclass[aspectratio=169]{beamer}
+\input{../theme/imsb_beamer.tex}
+
+\title{Tissue organisation, communication, and interpretation}
+\author{Dr.\ Robin Khatri}
+\institute{Institute of Medical Systems Bioinformatics, UKE}
+\date{Day 3 \textendash{} 23.06.2026}
+
+\begin{document}
+
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{Today, and why it stands alone}
+  \begin{itemize}
+    \item We run on a separate, smaller machine (6 GB) and a small, pre-annotated
+      single-cell spatial dataset. Nothing today depends on Days 1\textendash 2.
+    \item Focus shifts from \emph{making} the data to \emph{reading} it:
+      organisation, communication, and careful interpretation.
+    \item These are the analyses that turn a cell-type map into biology.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{From cell types to tissue organisation}
+  \centering
+  \begin{tikzpicture}[node distance=10mm]
+    \node[box] (a) {cell types\\(who is here)};
+    \node[box,right=of a] (b) {neighbourhoods\\(who is next to whom)};
+    \node[box,right=of b] (c) {niches\\(recurring units)};
+    \node[box,right=of c] (d) {communication\\(signalling)};
+    \draw[arr] (a)--(b); \draw[arr] (b)--(c); \draw[arr] (c)--(d);
+  \end{tikzpicture}
+  \vskip0.6em
+  Each step is built from the spatial graph. Proportions alone miss the
+  arrangement, which is where tissue function lives.
+\end{frame}
+
+\begin{frame}{Neighbourhood enrichment and co-occurrence}
+  \begin{itemize}
+    \item \textbf{Enrichment}: permute cell-type labels on the graph; compare
+      observed adjacency to the null. High means co-location, low means avoidance.
+    \item \textbf{Co-occurrence}: how the chance of finding type B near type A
+      changes with radius, separating contact from regional association.
+  \end{itemize}
+  \vskip0.4em
+  Caveat: both are relative to the chosen graph and the section's composition, so a
+  difference between samples can be a composition difference.
+\end{frame}
+
+\begin{frame}{Niches and tissue domains: the method landscape}
+  \small
+  \begin{itemize}
+    \item \textbf{Composition clustering} (what we do): summarise neighbourhood
+      cell-type composition, then cluster. Transparent, fast, CPU-friendly.
+    \item \textbf{BANKSY}: augments each cell with its neighbourhood; types cells and
+      finds domains together, scalable and batch-aware.
+    \item \textbf{CellCharter}: clusters neighbourhood-aware embeddings into niches
+      across samples.
+    \item \textbf{SpaGCN, STAGATE}: graph neural networks for spatial domains.
+  \end{itemize}
+  Learned methods can capture subtler domains; they add assumptions and compute.
+  \refline{Singhal et al., \emph{Nat Genet} 2024 (BANKSY); Varrone et al., \emph{Nat Genet} 2024 (CellCharter); Hu et al., \emph{Nat Methods} 2021 (SpaGCN); Dong \& Zhang, \emph{Nat Commun} 2022 (STAGATE).}
+\end{frame}
+
+\begin{frame}{Building niches transparently}
+  \centering
+  \begin{tikzpicture}[node distance=8mm and 12mm]
+    \node[box] (a) {for each cell:\\neighbourhood\\composition vector};
+    \node[box,right=of a] (b) {cluster the\\vectors\\(k-means)};
+    \node[box,right=of b] (c) {niche labels\\on the tissue};
+    \draw[arr] (a)--(b); \draw[arr] (b)--(c);
+  \end{tikzpicture}
+  \vskip0.6em
+  The output is named, mappable units you can compare across samples, with no black
+  box between the data and the label.
+\end{frame}
+
+\begin{frame}{Cell\textendash cell communication: the logic}
+  \begin{columns}[T]
+  \begin{column}{0.54\textwidth}
+  Score ligand\textendash receptor pairs between cell-type groups: is the ligand
+  expressed by one type and the receptor by a co-located type?
+  \vskip0.4em
+  In spatial data we can add the constraint that the partners are actually
+  neighbours, which dissociated data cannot.
+  \end{column}
+  \begin{column}{0.44\textwidth}
+  \centering
+  \begin{tikzpicture}[scale=0.95]
+    \node[draw=imsbblue,thick,circle,fill=imsbblue!12,minimum size=1.3cm] (s) at (0,0) {sender};
+    \node[draw=imsbgrey,thick,circle,fill=imsbgrey!12,minimum size=1.3cm] (r) at (3,0) {receiver};
+    \draw[arr] (s) -- node[lab,above]{ligand $\to$ receptor} (r);
+    \node[lab,below=1mm of s]{expresses L};
+    \node[lab,below=1mm of r]{expresses R};
+  \end{tikzpicture}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Communication: methods and caveats}
+  \small
+  \begin{itemize}
+    \item \textbf{Non-spatial:} CellPhoneDB, CellChat, NicheNet (adds downstream
+      targets); LIANA unifies many under one interface.
+    \item \textbf{Spatial-aware:} squidpy \texttt{ligrec}, stLearn, COMMOT (optimal
+      transport), NCEM (niche effects on expression).
+  \end{itemize}
+  \vskip0.3em
+  Caveats: expression is a proxy for activity; a small panel covers few pairs;
+  p-values depend on the permutation scheme; segmentation errors move ligands to the
+  wrong cell. Read results as hypotheses.
+  \refline{Efremova et al., \emph{Nat Protoc} 2020 (CellPhoneDB); Jin et al., \emph{Nat Commun} 2021 (CellChat); Browaeys et al., \emph{Nat Methods} 2020 (NicheNet); Dimitrov et al., \emph{Nat Commun} 2022 (LIANA); Cang \& Nie, \emph{Nat Methods} 2023 (COMMOT); Fischer et al.\ 2023 (NCEM).}
+\end{frame}
+
+\begin{frame}{Spatially variable genes and pattern reading}
+  \begin{itemize}
+    \item Moran's I ranks genes by how smoothly they vary across the tissue.
+    \item Top genes often trace anatomy or gradients rather than discrete clusters,
+      which complements clustering.
+    \item Plot the top hits in space and ask what structure each marks.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Comparing conditions}
+  \begin{itemize}
+    \item With a disease cohort, the question becomes which niches or compositions
+      change between groups.
+    \item Composition-aware tests (e.g.\ Milo for differential abundance, scCODA for
+      composition) avoid the pitfalls of comparing raw proportions.
+    \item Spatial features (niche burden, distances, enrichment scores) can be
+      summarised per sample and tested like any covariate.
+  \end{itemize}
+  \refline{Dann et al., \emph{Nat Biotechnol} 2022 (Milo); B\"uttner et al., \emph{Nat Commun} 2021 (scCODA).}
+\end{frame}
+
+\begin{frame}{Reading results critically}
+  \begin{itemize}
+    \item Segmentation errors propagate into co-expression and communication.
+    \item Low cytokine and chemokine detection makes immune states uncertain;
+      absence is weak evidence.
+    \item Spatial QC metrics are still maturing; thresholds are provisional.
+    \item Composition differences between sections can masquerade as enrichment.
+      Compare like with like.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The frontier}
+  \begin{itemize}
+    \item Integrating large H\&E images with the molecular layer, and pathology
+      image foundation models for region identity (e.g.\ UNI, Virchow,
+      H-optimus), with attention to their failure modes.
+    \item Multimodal imaging plus Xenium to give better identity to regions of
+      interest.
+    \item Agentic and LLM-assisted analysis workflows.
+  \end{itemize}
+  These are open and moving quickly; today's tools are a foundation, not the ceiling.
+\end{frame}
+
+\begin{frame}{Further reading}
+  \footnotesize
+  \begin{itemize}
+    \item Varrone et al. CellCharter. \emph{Nat Genet} 2024; Singhal et al. BANKSY. \emph{Nat Genet} 2024.
+    \item Cang \& Nie. COMMOT. \emph{Nat Methods} 2023; Dimitrov et al. LIANA. \emph{Nat Commun} 2022.
+    \item Dann et al. Milo. \emph{Nat Biotechnol} 2022.
+    \item Squidpy tutorials (neighbourhood enrichment, co-occurrence, ligrec).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Hands-on and discussion: \texttt{day\_3/03\_tutorial.ipynb}}
+  Dataset: a small pre-annotated seqFISH section. You will:
+  \begin{itemize}
+    \item run neighbourhood enrichment and co-occurrence;
+    \item identify niches from neighbourhood composition;
+    \item score ligand\textendash receptor interactions (offline);
+    \item rank spatially variable genes.
+  \end{itemize}
+  \textbf{Capstone:} pick one finding and read it end to end \textendash{} what it
+  claims, whether it is consistent, what could confound it, and what would test it
+  next. We discuss as a group.
+\end{frame}
+
+\end{document}

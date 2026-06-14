@@ -1,0 +1,32 @@
+name: env-spatial-course
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - scipy
+  - pandas
+  - pyarrow
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - h5py
+  - tqdm
+  - jupyterlab
+  - ipywidgets
+  - ipykernel
+  - python-igraph
+  - leidenalg
+  - scanpy>=1.10
+  - anndata>=0.10
+  - squidpy>=1.6
+  - spatialdata>=0.2
+  - spatialdata-io>=0.1
+  - harmonypy
+  - scikit-image
+  - imageio
+  - pip:
+      - omnipath
+      - pyclustree
