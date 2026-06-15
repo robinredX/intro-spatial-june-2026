@@ -110,7 +110,7 @@ whatever `SPATIAL_COURSE_DATA` points to). So locally the target is
 Diect download link is [here](https://cf.10xgenomics.com/samples/xenium/1.5.0/Xenium_V1_hKidney_nondiseased_section/Xenium_V1_hKidney_nondiseased_section_outs.zip`).
 All are public.
 
-## Running in three places
+## Resources
 
 **Resources needed.** A machine with 16 GB RAM is comfortable for Days 1 and 3; Day 2 may demand more. Install once (above), then `jupyter lab` and open the notebooks.
 
