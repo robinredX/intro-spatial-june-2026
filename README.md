@@ -13,7 +13,7 @@ Robin Khatri, Institute of Medical Systems Bioinformatics, UKE.
 | 2 | Imaging-based data: Xenium (https://learn.uke.de) | ~25 GB RAM|
 | 3 | Tissue organisation and interpretation (standalone at https://learn.baiome.org) | ~6 GB RAM |
 
-Each session is about 30-45 minutes of talk (`dayX/slides_dayX.pdf`), a short hands-on overview, then two hours of lab. The slides cover introduction and workflow, the method landscape, challenges, and further reading. The notebooks may hold more than fits in two hours by design, so they double as a take-home reference.
+Each session is about 30-45 minutes of talk, a short hands-on overview, then two hours of lab. The slides shown in the session cover introduction and workflow, the method landscape, challenges, and further reading. The notebooks may hold more than fits in two hours by design, so they double as a take-home reference.
 
 ## Repository layout
 
@@ -23,9 +23,9 @@ requirements.txt             pip equivalent (in case conda is unavailable on you
 scripts/prefetch_data.py     stages datasets into the shared data folder
 scripts/register_kernel.sh   registers the env as a JupyterLab kernel (available to use once a notebook is open)
 day_0_setup/00_test.ipynb   Verifies imports and environment
-day_1/  slides_day1.(tex|pdf)  01_tutorial.ipynb  01_solutions.ipynb
-day_2/  slides_day2.(tex|pdf)  02_tutorial.ipynb  02_solutions.ipynb
-day_3/  slides_day3.(tex|pdf)  03_tutorial.ipynb  03_solutions.ipynb
+day_1/  01_tutorial.ipynb  01_solutions.ipynb
+day_2/  02_tutorial.ipynb  02_solutions.ipynb
+day_3/  03_tutorial.ipynb  03_solutions.ipynb
 day_3/data/ligand_receptor_pairs.csv
 ```
 
@@ -34,7 +34,7 @@ day_3/data/ligand_receptor_pairs.csv
 Each day has a **tutorial** notebook and a matching **solutions** notebook. The
 tutorial has worked steps that run top to bottom, short method notes
 that frame the choices at each step, and exercises left blank for you. The solutions
-notebook is the same content with the exercises filled in (available mid-way through the lab).
+notebook is the same content with the exercises filled in; use it only when you need to.
 
 ## Setup
 
@@ -90,7 +90,7 @@ python scripts/prefetch_data.py
 ### Downloading the Xenium dataset (Day 2) (If working on a different machine or Colab)
 
 1. Open the dataset page: Human Kidney (non-diseased), Xenium Human Multi-Tissue and
-   Cancer panel —
+   Cancer panel:
    `https://www.10xgenomics.com/datasets/human-kidney-preview-data-xenium-human-multi-tissue-and-cancer-panel-1-standard`
    (you may need to sign in or accept terms).
 2. Download the **Xenium Output Bundle** (a `.zip`).

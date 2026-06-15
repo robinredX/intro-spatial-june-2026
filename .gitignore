@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# notebook run artifacts (local data caches and results)
+**/results/
+day_1/data/
+day_3/data/anndata/
