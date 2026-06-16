@@ -3,6 +3,7 @@ anndata>=0.10
 squidpy>=1.6
 spatialdata>=0.2
 spatialdata-io>=0.1
+spatialdata-plot
 leidenalg
 igraph
 harmonypy

@@ -1,0 +1,25 @@
+# Optional environment for the SpatialData / interactive-visualisation part of Day 2.
+# It adds spatialdata-plot (static rendering) and napari + napari-spatialdata
+# (interactive, local desktop only) on top of the analysis stack.
+# Register it as its own Jupyter kernel "Python (spatialdata)" (see README).
+name: env-spatialdata
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - pyarrow
+  - matplotlib
+  - scanpy>=1.10
+  - anndata>=0.10
+  - spatialdata>=0.2
+  - spatialdata-io>=0.1
+  - ipykernel
+  - jupyterlab
+  - pip:
+      - spatialdata-plot
+      - "napari[all]"
+      - napari-spatialdata

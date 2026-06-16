@@ -19,12 +19,13 @@ Each session is about 30-45 minutes of talk, a short hands-on overview, then two
 
 ```
 environment.yml              conda environment for all three days
+environment-spatialdata.yml  optional env for the SpatialData / napari step (Day 2b)
 requirements.txt             pip equivalent (in case conda is unavailable on your laptop or to use with Colab)
 scripts/prefetch_data.py     stages datasets into the shared data folder
 scripts/register_kernel.sh   registers the env as a JupyterLab kernel (available to use once a notebook is open)
 day_0_setup/00_test.ipynb   Verifies imports and environment
 day_1/  01_tutorial.ipynb  01_solutions.ipynb
-day_2/  02_tutorial.ipynb  02_solutions.ipynb
+day_2/  02_tutorial.ipynb  02_solutions.ipynb  02b_spatialdata_xenium.ipynb
 day_3/  03_tutorial.ipynb  03_solutions.ipynb
 day_3/data/ligand_receptor_pairs.csv
 ```
@@ -69,6 +70,22 @@ If you would rather run a standalone JupyterLab from this environment instead:
 conda activate env-spatial-course
 jupyter lab
 ```
+
+### Optional: SpatialData / napari kernel (Day 2b)
+
+`day_2/02b_spatialdata_xenium.ipynb` loads Xenium as a `SpatialData` object and renders it
+with `spatialdata-plot`; the interactive step uses `napari` + `napari-spatialdata`. The course
+env already includes `spatialdata-plot`, so the static cells run under the normal kernel. For the
+interactive viewer (local desktop only) create the dedicated env and register it as its own kernel:
+
+```bash
+conda env create -f environment-spatialdata.yml   # creates env-spatialdata
+conda activate env-spatialdata
+python -m ipykernel install --user --name env-spatialdata --display-name "Python (spatialdata)"
+```
+
+Then pick **Python (spatialdata)** for `02b`. napari opens a window, so it needs a local session,
+not the headless lab server.
 
 ## Data
 
