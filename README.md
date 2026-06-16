@@ -107,7 +107,7 @@ whatever `SPATIAL_COURSE_DATA` points to). So locally the target is
 `~/spatial_course_data/xenium_kidney/cell_feature_matrix.h5`, and so on.
 
 
-Diect download link is [here](https://cf.10xgenomics.com/samples/xenium/1.5.0/Xenium_V1_hKidney_nondiseased_section/Xenium_V1_hKidney_nondiseased_section_outs.zip`).
+Diect download link is [here](https://cf.10xgenomics.com/samples/xenium/1.5.0/Xenium_V1_hKidney_nondiseased_section/Xenium_V1_hKidney_nondiseased_section_outs.zip).
 All are public.
 
 ## Resources
